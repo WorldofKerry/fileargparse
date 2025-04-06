@@ -1,9 +1,9 @@
 [project]
-name = "dynargparse"
+name = "fileargparse"
 version = "0.0.1"
 dependencies = [
 
 ]
 
 [tool.setuptools.packages.find]
-include = ["dynargparse"]
+include = ["fileargparse"]

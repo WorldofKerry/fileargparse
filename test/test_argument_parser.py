@@ -2,7 +2,7 @@ import tempfile
 from time import sleep
 import pytest
 from argparse import ArgumentParser
-from fileargparse.core import FileArgumentParser
+from fileargparse import CachedFileArgumentParser, FileArgumentParser
 
 
 @pytest.fixture
@@ -19,7 +19,14 @@ def test_static(basic_parser: ArgumentParser):
         assert args.first_positional == str("abc123")
 
 
-def test_modified(basic_parser: ArgumentParser):
+@pytest.mark.parametrize(
+    "cls",
+    [
+        FileArgumentParser,
+        CachedFileArgumentParser,
+    ],
+)
+def test_modified_cached(basic_parser: ArgumentParser, cls: type):
     ITERATIONS = 3
     FILE_TIMESTAMP_RESOLUTION_S = 3
     with tempfile.NamedTemporaryFile("w") as f:
@@ -28,9 +35,10 @@ def test_modified(basic_parser: ArgumentParser):
         for expect, next, args in zip(
             range(ITERATIONS),
             range(1, ITERATIONS + 1),
-            FileArgumentParser(basic_parser, f.name),
+            cls(basic_parser, f.name),
         ):
-            sleep(FILE_TIMESTAMP_RESOLUTION_S)
+            if cls == CachedFileArgumentParser:
+                sleep(FILE_TIMESTAMP_RESOLUTION_S)
             assert args.first_positional == str(expect)
             f.write(f"{next}\n")
             f.seek(0)

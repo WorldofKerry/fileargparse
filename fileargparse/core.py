@@ -9,10 +9,14 @@ class FileArgumentParser(Iterable):
     """
 
     def __init__(
-        self, parser: argparse.ArgumentParser, file_path: str | bytes | os.PathLike
+        self,
+        parser: argparse.ArgumentParser,
+        file_path: str | bytes | os.PathLike,
+        default_on_file_not_found: bool = True,
     ):
         self.parser = parser
         self.file_path = file_path
+        self.default_on_file_not_found = default_on_file_not_found
 
     def __iter__(self):
         return self
@@ -21,10 +25,19 @@ class FileArgumentParser(Iterable):
         return self.parse_args()
 
     def parse_args(self, namespace: argparse.Namespace | None = None):
-        with open(self.file_path, "r") as file:
-            args = file.read().splitlines()
+        args = self._get_raw_args()
         self.args = self.parser.parse_args(args, namespace)
         return self.args
+
+    def _get_raw_args(self):
+        try:
+            with open(self.file_path, "r") as file:
+                args = file.read().splitlines()
+        except FileNotFoundError as e:
+            if self.default_on_file_not_found:
+                return None
+            raise e
+        return args
 
 
 class CachedFileArgumentParser(FileArgumentParser):
@@ -39,11 +52,11 @@ class CachedFileArgumentParser(FileArgumentParser):
     ):
         super().__init__(parser, file_path)
         self.last_modified = 0
+        self.args = None
 
     def parse_args(self, namespace: argparse.Namespace | None = None):
         if os.path.getmtime(self.file_path) != self.last_modified:
-            with open(self.file_path, "r") as file:
-                self.last_modified = os.path.getmtime(self.file_path)
-                args = file.read().splitlines()
+            self.last_modified = os.path.getmtime(self.file_path)
+            args = self._get_raw_args()
             self.args = self.parser.parse_args(args, namespace)
         return self.args

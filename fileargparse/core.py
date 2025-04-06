@@ -1,7 +1,7 @@
 import argparse
 from collections.abc import Iterable
 import os
-import typing
+from typing import Optional, Union
 
 
 class FileArgumentParser(Iterable):
@@ -12,7 +12,7 @@ class FileArgumentParser(Iterable):
     def __init__(
         self,
         parser: argparse.ArgumentParser,
-        file_path: typing.Union[str, bytes, os.PathLike],
+        file_path: Union[str, bytes, os.PathLike],
         default_on_file_not_found: bool = False,
     ):
         self.parser = parser
@@ -25,12 +25,12 @@ class FileArgumentParser(Iterable):
     def __next__(self):
         return self.parse_args()
 
-    def parse_args(self, namespace: typing.Optional[argparse.Namespace] = None):
+    def parse_args(self, namespace: Optional[argparse.Namespace] = None):
         args = self._get_raw_args()
         print(args)
         return self.parser.parse_args(args, namespace)
 
-    def _get_raw_args(self) -> None | list[str]:
+    def _get_raw_args(self) -> Optional[list[str]]:
         try:
             with open(self.file_path, "r") as file:
                 args = file.read().splitlines()

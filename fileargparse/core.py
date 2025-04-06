@@ -1,6 +1,7 @@
 import argparse
 from collections.abc import Iterable
 import os
+import typing
 
 
 class FileArgumentParser(Iterable):
@@ -11,7 +12,7 @@ class FileArgumentParser(Iterable):
     def __init__(
         self,
         parser: argparse.ArgumentParser,
-        file_path: str | bytes | os.PathLike,
+        file_path: typing.Union[str, bytes, os.PathLike],
         default_on_file_not_found: bool = False,
     ):
         self.parser = parser

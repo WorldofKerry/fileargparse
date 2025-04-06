@@ -59,8 +59,9 @@ class CachedFileArgumentParser(FileArgumentParser):
         self.args = None
 
     def parse_args(self, namespace: Optional[argparse.Namespace] = None):
-        if self.args is None or self._getmtime() != self.last_modified:
-            self.last_modified = self._getmtime()
+        modified_time = self._getmtime()
+        if self.args is None or modified_time != self.last_modified:
+            self.last_modified = modified_time
             self.args = super().parse_args(namespace)
         return self.args
 
@@ -69,5 +70,5 @@ class CachedFileArgumentParser(FileArgumentParser):
             return os.path.getmtime(self.file_path)
         except FileNotFoundError as e:
             if self.default_on_file_not_found:
-                return 0
+                return 0.0
             raise e

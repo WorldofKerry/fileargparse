@@ -6,6 +6,7 @@ import pytest
 from argparse import ArgumentParser
 from fileargparse import CachedFileArgumentParser, FileArgumentParser
 
+FILE_TIMESTAMP_RESOLUTION_S = 0.1
 
 NON_EXISTANT_PATH = "test/missing.txt"
 assert (
@@ -41,7 +42,6 @@ def test_static(basic_parser: ArgumentParser):
 )
 def test_modified_cached(basic_parser: ArgumentParser, cls: type):
     ITERATIONS = 3
-    FILE_TIMESTAMP_RESOLUTION_S = 0.1
     with tempfile.NamedTemporaryFile("w") as f:
         f.write("0\n")
         f.seek(0)
@@ -79,3 +79,36 @@ def test_file_not_found(
         ),
     ):
         assert args.first_positional == "mock_std_input"
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        (FileArgumentParser),
+        (CachedFileArgumentParser),
+    ],
+)
+def test_file_creation(
+    monkeypatch: pytest.MonkeyPatch,
+    basic_parser: ArgumentParser,
+    cls: type,
+):
+    monkeypatch.setattr("sys.argv", ["python", "mock_std_input"])
+    parser: FileArgumentParser = cls(
+        basic_parser,
+        NON_EXISTANT_PATH,
+        default_on_file_not_found=True,
+    )
+    assert parser.parse_args().first_positional == "mock_std_input"
+    with tempfile.NamedTemporaryFile("w") as f:
+        parser.file_path = f.name
+        f.write("0\n")
+        f.seek(0)
+        for i, args in zip(
+            range(3),
+            parser,
+        ):
+            sleep(FILE_TIMESTAMP_RESOLUTION_S)
+            assert args.first_positional == str(i)
+            f.write(f"{i+1}\n")
+            f.seek(0)

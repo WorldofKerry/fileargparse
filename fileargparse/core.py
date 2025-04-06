@@ -51,14 +51,14 @@ class CachedFileArgumentParser(FileArgumentParser):
     def __init__(
         self,
         parser: argparse.ArgumentParser,
-        file_path: str | bytes | os.PathLike,
+        file_path: Union[str, bytes, os.PathLike],
         default_on_file_not_found: bool = False,
     ):
         super().__init__(parser, file_path, default_on_file_not_found)
         self.last_modified = 0
         self.args = None
 
-    def parse_args(self, namespace: argparse.Namespace | None = None):
+    def parse_args(self, namespace: Optional[argparse.Namespace] = None):
         if self.args is None or self._getmtime() != self.last_modified:
             self.last_modified = self._getmtime()
             self.args = super().parse_args(namespace)

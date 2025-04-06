@@ -33,12 +33,11 @@ class FileArgumentParser(Iterable):
     def _get_raw_args(self) -> Optional[list[str]]:
         try:
             with open(self.file_path, "r") as file:
-                args = file.read().splitlines()
+                return file.read().splitlines()
         except FileNotFoundError as e:
             if self.default_on_file_not_found:
                 return None
             raise e
-        return args
 
 
 class CachedFileArgumentParser(FileArgumentParser):

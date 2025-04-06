@@ -1,8 +1,16 @@
+import io
+import os
 import tempfile
 from time import sleep
 import pytest
 from argparse import ArgumentParser
 from fileargparse import CachedFileArgumentParser, FileArgumentParser
+
+
+NON_EXISTANT_PATH = "test/missing.txt"
+assert (
+    os.path.exists(NON_EXISTANT_PATH) is False
+), f"Path {NON_EXISTANT_PATH} should not exist"
 
 
 @pytest.fixture
@@ -17,6 +25,11 @@ def basic_parser():
 def test_static(basic_parser: ArgumentParser):
     for i, args in zip(range(3), FileArgumentParser(basic_parser, "test/example.txt")):
         assert args.first_positional == str("abc123")
+    with pytest.raises(FileNotFoundError):
+        _ = FileArgumentParser(
+            basic_parser,
+            NON_EXISTANT_PATH,
+        ).parse_args()
 
 
 @pytest.mark.parametrize(
@@ -28,7 +41,7 @@ def test_static(basic_parser: ArgumentParser):
 )
 def test_modified_cached(basic_parser: ArgumentParser, cls: type):
     ITERATIONS = 3
-    FILE_TIMESTAMP_RESOLUTION_S = 3
+    FILE_TIMESTAMP_RESOLUTION_S = 0.1
     with tempfile.NamedTemporaryFile("w") as f:
         f.write("0\n")
         f.seek(0)
@@ -42,3 +55,27 @@ def test_modified_cached(basic_parser: ArgumentParser, cls: type):
             assert args.first_positional == str(expect)
             f.write(f"{next}\n")
             f.seek(0)
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        (FileArgumentParser),
+        (CachedFileArgumentParser),
+    ],
+)
+def test_file_not_found(
+    monkeypatch: pytest.MonkeyPatch,
+    basic_parser: ArgumentParser,
+    cls: type,
+):
+    monkeypatch.setattr("sys.argv", ["python", "mock_std_input"])
+    for i, args in zip(
+        range(3),
+        cls(
+            basic_parser,
+            NON_EXISTANT_PATH,
+            default_on_file_not_found=True,
+        ),
+    ):
+        assert args.first_positional == "mock_std_input"

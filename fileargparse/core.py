@@ -12,7 +12,7 @@ class FileArgumentParser(Iterable):
         self,
         parser: argparse.ArgumentParser,
         file_path: str | bytes | os.PathLike,
-        default_on_file_not_found: bool = True,
+        default_on_file_not_found: bool = False,
     ):
         self.parser = parser
         self.file_path = file_path
@@ -26,10 +26,10 @@ class FileArgumentParser(Iterable):
 
     def parse_args(self, namespace: argparse.Namespace | None = None):
         args = self._get_raw_args()
-        self.args = self.parser.parse_args(args, namespace)
-        return self.args
+        print(args)
+        return self.parser.parse_args(args, namespace)
 
-    def _get_raw_args(self):
+    def _get_raw_args(self) -> None | list[str]:
         try:
             with open(self.file_path, "r") as file:
                 args = file.read().splitlines()
@@ -48,15 +48,25 @@ class CachedFileArgumentParser(FileArgumentParser):
     """
 
     def __init__(
-        self, parser: argparse.ArgumentParser, file_path: str | bytes | os.PathLike
+        self,
+        parser: argparse.ArgumentParser,
+        file_path: str | bytes | os.PathLike,
+        default_on_file_not_found: bool = False,
     ):
-        super().__init__(parser, file_path)
+        super().__init__(parser, file_path, default_on_file_not_found)
         self.last_modified = 0
         self.args = None
 
     def parse_args(self, namespace: argparse.Namespace | None = None):
-        if os.path.getmtime(self.file_path) != self.last_modified:
-            self.last_modified = os.path.getmtime(self.file_path)
-            args = self._get_raw_args()
-            self.args = self.parser.parse_args(args, namespace)
+        if self.args is None or self._getmtime() != self.last_modified:
+            self.last_modified = self._getmtime()
+            self.args = super().parse_args(namespace)
         return self.args
+
+    def _getmtime(self) -> float:
+        try:
+            return os.path.getmtime(self.file_path)
+        except FileNotFoundError as e:
+            if self.default_on_file_not_found:
+                return 0
+            raise e

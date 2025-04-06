@@ -25,7 +25,7 @@ class FileArgumentParser(Iterable):
     def __next__(self):
         return self.parse_args()
 
-    def parse_args(self, namespace: argparse.Namespace | None = None):
+    def parse_args(self, namespace: typing.Union[argparse.Namespace, None] = None):
         args = self._get_raw_args()
         print(args)
         return self.parser.parse_args(args, namespace)

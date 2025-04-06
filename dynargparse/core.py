@@ -3,7 +3,10 @@ from collections.abc import Iterable
 import os
 
 
-class Wrapper(Iterable):
+class FileArgumentParser(Iterable):
+    """
+    Parses command-line arguments from a file.
+    """
     def __init__(
         self, parser: argparse.ArgumentParser, file_path: str | bytes | os.PathLike
     ):

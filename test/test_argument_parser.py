@@ -112,3 +112,5 @@ def test_file_creation(
             assert args.first_positional == str(i)
             f.write(f"{i+1}\n")
             f.seek(0)
+    parser.file_path = NON_EXISTANT_PATH
+    assert parser.parse_args().first_positional == "mock_std_input"
